@@ -80,8 +80,6 @@ public class MainActivity extends ListActivity {
 
         if (mAdapter.getCount() == 0)
             loadData();
-        //else
-            //mAdapter.notifyDataSetChanged();
     }
 
     @Override

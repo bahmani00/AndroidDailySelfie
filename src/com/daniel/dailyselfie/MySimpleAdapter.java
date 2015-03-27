@@ -72,7 +72,6 @@ class MySimpleAdapter extends BaseAdapter {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        //TODO: put the name
         if (picturePath != null && !picturePath.isEmpty()) {
             Log.v(TAG, "picturePath: " + picturePath);
             viewHolder.lblPicName.setText(ImageHelper.getFileName(picturePath));
@@ -82,6 +81,7 @@ class MySimpleAdapter extends BaseAdapter {
         return convertView;
     }
 
+    // http://developer.android.com/training/camera/photobasics.html
     private void setPic(String picturePath, ImageView imgView) {
         // Get the dimensions of the View
         int targetW = imgView.getWidth();
@@ -102,7 +102,7 @@ class MySimpleAdapter extends BaseAdapter {
         Log.v(TAG, "photoW: " + photoW + " , photoH: " + photoH);
 
         // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
+        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
 
         // Decode the image file into a Bitmap sized to fill the View
         bmOptions.inJustDecodeBounds = false;
