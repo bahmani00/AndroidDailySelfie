@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <string name="app_name">Daily Selfie</string>
+    <string name="selfie_image">My Selfie</string>
+    <string name="action_delete">Delete</string>
+    <string name="image_deleted">Image deleted!</string>
+    <string name="action_show_camera">Take a Selfie</string>
+    <string name="image_not_exist">Image does not exist!</string>
+    
+</resources>
