@@ -75,45 +75,13 @@ class MySimpleAdapter extends BaseAdapter {
         if (picturePath != null && !picturePath.isEmpty()) {
             Log.v(TAG, "picturePath: " + picturePath);
             viewHolder.lblPicName.setText(ImageHelper.getFileName(picturePath));
-            setPic(picturePath, viewHolder.imgView);
+            ImageHelper.setPic(picturePath, viewHolder.imgView);
         }
 
         return convertView;
     }
 
-    // http://developer.android.com/training/camera/photobasics.html
-    private void setPic(String picturePath, ImageView imgView) {
-        // Get the dimensions of the View
-        int targetW = imgView.getWidth();
-        int targetH = imgView.getHeight();
-
-        Log.v(TAG, "targetW: " + targetW + " , targetH: " + targetH);
-
-        if(targetH == 0)targetH = 100;
-        if(targetW == 0)targetW = 100;
-
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(picturePath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        Log.v(TAG, "photoW: " + photoW + " , photoH: " + photoH);
-
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-
-        Bitmap bitmap = BitmapFactory.decodeFile(picturePath, bmOptions);
-        imgView.setImageBitmap(bitmap);
-    }
-
-
+ 
     private static class ViewHolder{
         TextView lblPicName;
         ImageView imgView;
