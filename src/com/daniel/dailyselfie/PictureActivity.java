@@ -13,7 +13,9 @@ import android.widget.Toast;
 
 public class PictureActivity extends Activity {
 
-    public static final int MENU_DELETE = 1;
+	private static final String TAG = PictureActivity.class.getSimpleName();
+
+	public static final int MENU_DELETE = 1;
     private String picPath;
 
     @Override

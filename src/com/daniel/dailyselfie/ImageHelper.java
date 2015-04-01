@@ -14,110 +14,148 @@ import android.util.Log;
 import android.widget.ImageView;
 
 public class ImageHelper {
-	
-    private static final String TAG = "dailyselfie";
+
+	private static final String TAG = ImageHelper.class.getSimpleName();
+
 	private static String DIR = "DailySelfie";
-	
-    public static List<String> getSelfieFiles() {
-    	
-        final List<String> mItems = new ArrayList<String>();
 
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+	private static File getRootStorage() {
+		// Generally, any photos that the user captures with the device camera
+		// should be saved on the device in the public external storage so they
+		// are accessible by all apps
+		// storage/emulated/0/Pictures
+		return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+	}
 
-        if(storageDir == null) return mItems;
-        	
-    	if(!storageDir.exists()) storageDir.mkdirs();
+	public static List<String> getSelfieFiles() {
 
-        storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DIR);
-    	
-    	if(!storageDir.exists()) {
-    		storageDir.mkdirs();
-    	} else {
-        
-            File[] files = storageDir.listFiles();
-            for (File file : files) {
-                if (!file.isDirectory() && file.getAbsolutePath().endsWith(".jpg")) {
-                	mItems.add(file.getAbsolutePath());
-                }
-            }
-        }
-    	
-    	return mItems;
-    }
+		final List<String> mItems = new ArrayList<String>();
 
-    public static String saveImageFile(String imageFileName, Bitmap imageBitmap) throws Exception {
-        File storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DIR);
-        File file = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                storageDir      /* directory */
-        );
+		// storage/emulated/0/Pictures
+		File rootDir = getRootStorage();
 
-        file.createNewFile();
-        FileOutputStream ostream = new FileOutputStream(file);
-        imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
-        ostream.close();
+		if (rootDir == null)
+			return mItems;
 
-        return file.getAbsolutePath();
-    }
-    
-    public static String generateNewImageFileName() {    
-    	 // Create an image file name: timeStamp
-        return new SimpleDateFormat("yyMMdd_HHmmss").format(new Date());
-    }
+		if (!rootDir.exists())
+			rootDir.mkdirs();
 
-    public static boolean deleteImageFile(String filePath) {
-        File file = new File(filePath);
-        if (file != null && file.exists()) {
-        	return file.delete();
-        }else{
-        	Log.v(TAG, filePath + " doesn't exist!");
-        }
-        
-        return false;
-    }
-    
+		// storage/emulated/0/Pictures/DailySelfie
+		File imgStorageDir = new File(rootDir, DIR);
 
-    public static String getFileName(String picturePath){
-        String[] paths = picturePath.split("/");
+		if (!imgStorageDir.exists()) {
+			imgStorageDir.mkdirs();
+		} else {
 
-        Log.v(TAG, "paths[paths.length - 1]: " + paths[paths.length - 1]);
+			File[] files = imgStorageDir.listFiles();
+			for (File file : files) {
+				if (!file.isDirectory() && file.getAbsolutePath().endsWith(".jpg")) {
+					mItems.add(file.getAbsolutePath());
+				}
+			}
+		}
 
-        return paths[paths.length - 1];
-    }
+		return mItems;
+	}
 
+	/*
+	 * Save image into "storage/emulated/0/Pictures/DailySelfie/" directory
+	 */
+	public static String saveImageFile(Bitmap imageBitmap) throws Exception {
+		// storage/emulated/0/Pictures
+		File rootDir = getRootStorage();
+		if (!rootDir.exists())
+			rootDir.mkdirs();
 
-    // http://developer.android.com/training/camera/photobasics.html
-    public static void setPic(String picturePath, ImageView imgView) {
-        // Get the dimensions of the View
-        int targetW = imgView.getWidth();
-        int targetH = imgView.getHeight();
+		// storage/emulated/0/Pictures/DailySelfie
+		File imgStorageDir = new File(rootDir, DIR);
 
-        Log.v(TAG, "targetW: " + targetW + " , targetH: " + targetH);
+		String imageFileName = generateNewImageFileName();
+		Log.v(TAG, "imageFileName: " + imageFileName);
 
-        if(targetH == 0)targetH = 100;
-        if(targetW == 0)targetW = 100;
+/*		
+ 		//generates a number at the end 150618_102545-1961144729.jpg
+ 		File file = File.createTempFile(imageFileName,  prefix 
+				".jpg",  suffix 
+				imgStorageDir  directory 
+		);
+*/
+		File file = new File(imgStorageDir, imageFileName + ".jpg");
 
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(picturePath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
+		file.createNewFile();
+		FileOutputStream ostream = new FileOutputStream(file);
+		imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
+		ostream.close();
 
-        Log.v(TAG, "photoW: " + photoW + " , photoH: " + photoH);
+/*		// scan the image so show up in album
+		MediaScannerConnection.scanFile(this, new String[] { imagePath }, null,
+				new MediaScannerConnection.OnScanCompletedListener() {
+					public void onScanCompleted(String path, Uri uri) {
+						if (Config.LOG_DEBUG_ENABLED) {
+							Log.d(Config.LOGTAG, "scanned : " + path);
+						}
+					}
+				});
+*/
+		return file.getAbsolutePath();
+	}
 
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+	public static String generateNewImageFileName() {
+		// Create an image file name: timeStamp
+		return new SimpleDateFormat("yyMMdd_HHmmss").format(new Date());
+	}
 
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
+	public static boolean deleteImageFile(String filePath) {
+		File file = new File(filePath);
+		if (file != null && file.exists()) {
+			return file.delete();
+		} else {
+			Log.v(TAG, filePath + " doesn't exist!");
+		}
 
-        Bitmap bitmap = BitmapFactory.decodeFile(picturePath, bmOptions);
-        imgView.setImageBitmap(bitmap);
-    }
+		return false;
+	}
 
+	public static String getFileName(String picturePath) {
+		String[] paths = picturePath.split("/");
+
+		Log.v(TAG, "paths[paths.length - 1]: " + paths[paths.length - 1]);
+
+		return paths[paths.length - 1];
+	}
+
+	// http://developer.android.com/training/camera/photobasics.html
+	public static void setPic(String picturePath, ImageView imgView) {
+		// Get the dimensions of the View
+		int targetW = imgView.getWidth();
+		int targetH = imgView.getHeight();
+
+		Log.v(TAG, "targetW: " + targetW + " , targetH: " + targetH);
+
+		if (targetH == 0)
+			targetH = 100;
+		if (targetW == 0)
+			targetW = 100;
+
+		// Get the dimensions of the bitmap
+		BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+		bmOptions.inJustDecodeBounds = true;
+		BitmapFactory.decodeFile(picturePath, bmOptions);
+		int photoW = bmOptions.outWidth;
+		int photoH = bmOptions.outHeight;
+
+		Log.v(TAG, "photoW: " + photoW + " , photoH: " + photoH);
+
+		// Determine how much to scale down the image
+		int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+		// Decode the image file into a Bitmap sized to fill the View
+		bmOptions.inJustDecodeBounds = false;
+		bmOptions.inSampleSize = scaleFactor;
+		bmOptions.inPurgeable = true;
+
+		Bitmap bitmap = BitmapFactory.decodeFile(picturePath, bmOptions);
+		imgView.setImageBitmap(bitmap);
+	}
 
 }

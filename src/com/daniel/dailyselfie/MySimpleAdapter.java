@@ -14,7 +14,8 @@ import java.util.List;
 
 class MySimpleAdapter extends BaseAdapter {
 
-    private final String TAG = "dailyselfie";
+	private static final String TAG = MySimpleAdapter.class.getSimpleName();
+
     private final Context mContext;
     private final List<String> mItems = new ArrayList<String>();
 

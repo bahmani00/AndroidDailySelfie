@@ -13,12 +13,13 @@ import java.util.Date;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
+	private static final String TAG = AlarmReceiver.class.getSimpleName();
+
     public static final int REQUEST_CODE_ALARM_RECEIVER = 1;
 
     // Notification ID to allow for future updates
     private static final int MY_NOTIFICATION_ID = 1;
 
-    private static final String TAG = "AlarmReceiver";
 
     // Notification Text Elements
     private final CharSequence tickerText = "";//Are You Playing Angry Birds Again!";

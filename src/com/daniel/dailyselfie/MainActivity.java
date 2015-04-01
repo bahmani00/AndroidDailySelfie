@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.ListActivity;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -16,136 +17,139 @@ import android.widget.Toast;
 
 import java.util.List;
 
-
 public class MainActivity extends ListActivity {
 
-    private static final int REQUEST_IMAGE_CAPTURE = 1;
-    private static final int REQUEST_IMAGE_DELETE = 2;
+	private static final String TAG = MainActivity.class.getSimpleName();
 
-    private final String TAG = "dailyselfie";
-    private MySimpleAdapter mAdapter;
+	private static final int REQUEST_IMAGE_CAPTURE = 1;
+	private static final int REQUEST_IMAGE_DELETE = 2;
+	
+	private final long INITIAL_ALARM_DELAY_20MINs = 20 * 60 * 1000L;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	private MySimpleAdapter mAdapter;
 
-        setAlarm();
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-        initializeListView();
-    }
+		setAlarm();
 
-    private void setAlarm() {
-        final long INITIAL_ALARM_DELAY_2MINs = 2 * 60 * 1000L;
+		initializeListView();
+	}
 
-        PendingIntent mNotificationReceiverPendingIntent = PendingIntent.getBroadcast(
-                this,
-                AlarmReceiver.REQUEST_CODE_ALARM_RECEIVER,
-                new Intent(this, AlarmReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT);
+	private void setAlarm() {
 
-        // Set single alarm
-        AlarmManager mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + INITIAL_ALARM_DELAY_2MINs,
-                INITIAL_ALARM_DELAY_2MINs,
-                mNotificationReceiverPendingIntent);
+		PendingIntent mNotificationReceiverPendingIntent = PendingIntent.getBroadcast(this,
+				AlarmReceiver.REQUEST_CODE_ALARM_RECEIVER, new Intent(this, AlarmReceiver.class),
+				PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Toast.makeText(getApplicationContext(), "Selfie Alarm has been set!", Toast.LENGTH_LONG).show();
-    }
+		// Set single alarm
+		AlarmManager mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+		mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + INITIAL_ALARM_DELAY_20MINs,
+				INITIAL_ALARM_DELAY_20MINs, mNotificationReceiverPendingIntent);
 
-    private void initializeListView()
-    {
-        final ListView listView = getListView();
+		Toast.makeText(getApplicationContext(), "Selfie Alarm has been set!", Toast.LENGTH_LONG).show();
+	}
 
-        mAdapter = new MySimpleAdapter(this);
+	private void initializeListView() {
+		final ListView listView = getListView();
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
+		mAdapter = new MySimpleAdapter(this);
 
-                String picPath = ((String)parent.getAdapter().getItem(position));
-                Intent intent = new Intent(parent.getContext(),
-                        PictureActivity.class);
-                intent.putExtra("picPath", picPath);
-                startActivityForResult(intent, REQUEST_IMAGE_DELETE);
-            }
-        });
+		listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-        listView.setAdapter(mAdapter);
-    }
+				String picPath = ((String) parent.getAdapter().getItem(position));
+				Intent intent = new Intent(parent.getContext(), PictureActivity.class);
+				intent.putExtra("picPath", picPath);
+				startActivityForResult(intent, REQUEST_IMAGE_DELETE);
+			}
+		});
 
-    @Override
-    public void onResume() {
-        super.onResume();
+		listView.setAdapter(mAdapter);
+	}
 
-        if (mAdapter.getCount() == 0)
-            loadData();
-    }
+	@Override
+	public void onResume() {
+		super.onResume();
 
-    @Override
-    public void onStop() {
-        super.onStop();
-    }
+		if (mAdapter.getCount() == 0)
+			loadData();
+	}
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
+	@Override
+	public void onStop() {
+		super.onStop();
+	}
 
-            try {
-                // Create an image file name
-                String imageFileName = ImageHelper.generateNewImageFileName();
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {			
+			saveImage(data);			
+		} else if (requestCode == REQUEST_IMAGE_DELETE && resultCode == RESULT_OK) {
+			// reload the items
+			loadData();
+		}
+	}
 
-                String picturePath = ImageHelper.saveImageFile(imageFileName, imageBitmap);
+	private void saveImage(Intent data) {
+		Bundle extras = data.getExtras();
+		Bitmap imageBitmap = (Bitmap) extras.get("data");
 
-                //bind the new image to adapter
-                mAdapter.add(picturePath);
+		try {
 
-            } catch (Exception e) {
-                Toast.makeText(this, "Error occurred in creating/saving the image File", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-        }else if (requestCode == REQUEST_IMAGE_DELETE && resultCode == RESULT_OK) {
-        	loadData();
-        }
-        
-    }
+			String picturePath = ImageHelper.saveImageFile(imageBitmap);
 
-    private void dispatchTakePictureIntent() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-        }
-    }
+			// bind the new image to adapter
+			mAdapter.add(picturePath);
 
-    private void loadData() {
-    	mAdapter.clear();
-    	
-    	final List<String> images = ImageHelper.getSelfieFiles();
-        for (String imagePath : images) {
-            mAdapter.add(imagePath);
-        }    	
-    }
+		} catch (Exception e) {
+			Toast.makeText(this, "Error occurred in saving the image File", Toast.LENGTH_LONG).show();
+			//e.printStackTrace();
+		}
+		
+	}
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+	private void dispatchTakePictureIntent() {
+		if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+			Toast.makeText(this, "This device has no camera", Toast.LENGTH_LONG);
+			return;
+		}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
+		Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+		if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+		}
+	}
 
-        if (id == R.id.action_show_camera) {
+	private void loadData() {
+		mAdapter.clear();
 
-            dispatchTakePictureIntent();
+		final List<String> images = ImageHelper.getSelfieFiles();
+		for (String imagePath : images) {
+			mAdapter.add(imagePath);
+		}
+	}
 
-            return true;
-        }
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.menu_main, menu);
+		return true;
+	}
 
-        return super.onOptionsItemSelected(item);
-    }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		int id = item.getItemId();
+
+		if (id == R.id.action_show_camera) {
+
+			dispatchTakePictureIntent();
+
+			return true;
+		}
+
+		return super.onOptionsItemSelected(item);
+	}
 
 }
